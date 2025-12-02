@@ -5,38 +5,34 @@ This repository contains the official implementation of RCMFA, a deep learning f
 ## Environment Setup
 
 Recommended:
-Python >= 3.8
-PyTorch >= 1.10
-CUDA >= 11.3 (optional)
+  Python >= 3.8
+  PyTorch >= 1.10
+  CUDA >= 11.3 (optional)
 
 ## Training
 
 To train the RCMFA model:
-
-python RCMFA.py --mode train
+  python RCMFA.py --mode train
 
 ## Testing & Evaluation
 
 Evaluate a trained model:
-
-python RCMFA.py --mode test --checkpoint ./checkpoints/checkpoint/model_best.pth
+  python RCMFA.py --mode test --checkpoint ./checkpoints/checkpoint/model_best.pth
 
 ## ROC AUC Statistical Comparison (DeLong Test)
 
 Use DeLong's test to compare AUCs between two models:
-
-python Delong_test.py --pred1 modelA_pred.npy --pred2 modelB_pred.npy --label label.npy
+  python Delong_test.py --pred1 modelA_pred.npy --pred2 modelB_pred.npy --label label.npy
 
 
 ## SHAP Interpretability
 
 Generate SHAP plots for model interpretation:
-
-python draw_shap.py --input features.npy --model ./checkpoints/checkpoint/model_best.pth
+  python draw_shap.py --input features.npy --model ./checkpoints/checkpoint/model_best.pth
 
 
 ## Pretrained Weights
 Pretrained backbone weights (e.g., PVT) are stored in:
-pretrained_pth/pvt/
+  pretrained_pth/pvt/
 
 
