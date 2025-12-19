@@ -153,7 +153,7 @@ def evaluate(y_true, y_pred_prob, digits=4, cutoff='auto'):
     evaluation['auc_ori'] = round(roc_auc_score(y_true, y_pred), digits)
     evaluation['acc'] = round(accuracy_score(y_true, y_pred_t), digits)
     evaluation['recall'] = round(recall_score(y_true, y_pred_t), digits)
-    evaluation['specificity'] = round(tn / (tn + fp), digits)
+    evaluation['Precision'] = round(tp / (tp + fp), digits)
     evaluation['F1'] = round(f1_score(y_true, y_pred_t), digits)
     evaluation['cutoff'] = cutoff
     return evaluation
@@ -355,7 +355,7 @@ for seed in np.arange(2, 3, 1):
                 evaluate_val = evaluate(batch_y, output.data, 4, cutoff='auto')
                 accuracy = evaluate_val['acc']
                 recall = evaluate_val['recall']
-                precision = evaluate_val['specificity']
+                precision = evaluate_val['Precision']
                 f1 = evaluate_val['F1']
                
                 # y_pred = np.argmax(output.data, axis=1)
@@ -364,7 +364,7 @@ for seed in np.arange(2, 3, 1):
                 # print("feature len:", len_feature)
                 print(f"val Accuracy: {evaluate_val['acc'] * 100:.4f}%")
                 print(f"val recall: {evaluate_val['recall']* 100:.4f}%")
-                print(f"val Precision: {evaluate_val['specificity']* 100:.4f}%")
+                print(f"val Precision: {evaluate_val['Precision']* 100:.4f}%")
                 print(f"val F1-Score: {evaluate_val['F1']* 100:.4f}%")
                 print("val AUC:", evaluate_val['auc'])
                 print("val AUC_ori:", evaluate_val['auc_ori'])
