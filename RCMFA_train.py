@@ -16,7 +16,7 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 # from decision_curve import DecisionCurve
 
-kf = KFold(n_splits=5, random_state=None, shuffle=True) # 5折
+kf = KFold(n_splits=5, random_state=None, shuffle=True) # 5fold
 matplotlib.use('TkAgg')
 from sklearn.decomposition import PCA, KernelPCA
 from _collections import OrderedDict
@@ -26,7 +26,7 @@ import random, warnings
 from lib.pvtv2 import pvt_v2_b0,  pvt_v2_b2
 from lib.decoders import EMSCA
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')# 训练模型
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 warnings.filterwarnings('ignore')
 
 def set_seed(seed):
@@ -38,7 +38,7 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
 
-# 定义RCMFA网络模型
+# init_model
 class RCMFA(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, l1_lambda, encoder='pvt_v2_b0', pretrain=True, kernel_sizes=[1,3,5],
                  kernel_scale=3, activation='relu', num_classes=1, expansion_factor=2):
@@ -76,18 +76,18 @@ class RCMFA(nn.Module):
         self.relu = nn.ReLU()
         self.fc3 = nn.Linear(hidden_size, output_size)
         self.dropout = nn.Dropout(p=0.1)
-        self.l1_lambda = l1_lambda  # L1 正则化系数
-        self.softmax = nn.Softmax(dim=1)  # 添加 softmax 激活函数
+        self.l1_lambda = l1_lambda  # L1 
+        self.softmax = nn.Softmax(dim=1) 
     def forward(self, x):
 
-        # 扩展维度到 [178, 1, 189, 189]
-        x_expanded = x.unsqueeze(1).unsqueeze(3)  # 变成 [178, 1, 189]
+        # [178, 1, 189, 189]
+        x_expanded = x.unsqueeze(1).unsqueeze(3) 
         shape_size_expand=x_expanded.shape[2]
         x = x_expanded.repeat(1, 1, 1, shape_size_expand)
         x = F.interpolate(
             x,
-            size=(189, 189),  # 目标大小
-            mode='bilinear',  # 双线性插值
+            size=(189, 189),  
+            mode='bilinear', 
             align_corners=False
         )
         # if grayscale input, convert to 3 channels
@@ -165,7 +165,7 @@ from imblearn.over_sampling import SMOTE
 
 def preprocess_text(data):
     data = data.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-    # 将所有需要进行 LabelEncoder 编码的列转换为字符串类型
+  
     columns_to_encode = [
         'Menopausal status (0.Pre-menopausal; 1. Post-menopausal; 2. Unknown)',
         'Tumor histology(1, Invasive ductal;2, Invasive Lobular; 3, Mixed; 4,Mucinous(粘液）；5， Micropapillary（微乳头）5 大汗腺癌）',
@@ -173,10 +173,10 @@ def preprocess_text(data):
         '蒽环类Anthracycline', '紫杉烷Taxane', '铂 platinum', 'Anti-HER2（单/双）',
         'Received neoadjuvant endocrine therapy接受新辅助内分泌治疗(来曲唑、阿那曲唑和依西美坦)'
     ]
-    # 将这些列转换为字符串
+  
     for column in columns_to_encode:
         data[column] = data[column].astype(str)
-    # 将 'Menopausal status' 和 'Tumor histology' 列进行编码
+ 
     label_encoder = LabelEncoder()
     # Menopausal status: 0=Pre-menopausal, 1=Post-menopausal, 2=Unknown
     data['Menopausal status'] = label_encoder.fit_transform(
@@ -184,7 +184,7 @@ def preprocess_text(data):
     # Tumor histology 编码: 1=Invasive ductal, 2=Invasive Lobular, etc.
     data['Tumor histology'] = label_encoder.fit_transform(data[
             'Tumor histology(1, Invasive ductal;2, Invasive Lobular; 3, Mixed; 4,Mucinous(粘液）；5， Micropapillary（微乳头）5 大汗腺癌）'])
-    # 其他列根据需求进行编码
+
     data['HR status'] = label_encoder.fit_transform(data['HR status'])
     data['HER2'] = label_encoder.fit_transform(data['HER2'])
     data['Received neoadjuvant chemotherapy'] = label_encoder.fit_transform(data['Received neoadjuvant chemotherapy'])
@@ -194,59 +194,59 @@ def preprocess_text(data):
     data['Anti-HER2（单/双）'] = label_encoder.fit_transform(data['Anti-HER2（单/双）'])
     data['Received neoadjuvant endocrine therapy接受新辅助内分泌治疗(来曲唑、阿那曲唑和依西美坦)'] = label_encoder.fit_transform(
         data['Received neoadjuvant endocrine therapy接受新辅助内分泌治疗(来曲唑、阿那曲唑和依西美坦)'])
-    # 对 'cTNM' 列进行编码，将其作为分类标签
+  
     data['cTNM'] = label_encoder.fit_transform(data['cTNM'])
     data['Clinical stage'] = label_encoder.fit_transform(data['Clinical stage'])
-    # 创建一个 SimpleImputer 来填充缺失值（这里选择用列的众数填充分类变量）
-    imputer = SimpleImputer(strategy='mean')  # 对分类变量用'mean'填充
-    # 填充整个数据集的缺失值
+   
+    imputer = SimpleImputer(strategy='mean')  
+   
     data = pd.DataFrame(imputer.fit_transform(data.iloc[:, 1:]), columns=data.columns[1:])
-    # 将目标列（例如 'label' 或其他）与特征列分离
+    
     data = data.drop(columns=['label'])
     return data
 def data_prepare(train_data_value_A,train_data_original,read_clinical_data,batch_Size):
-        # 创建一个字典，将标签映射到相应的值
+        # dict
         label_mapping = dict(zip(train_data_value_A['ID'], train_data_value_A['labels']))
         # extracted_All_label = train_data_original['ID'].map(label_mapping)
         clinical_data = preprocess_text(read_clinical_data)
         scaler = StandardScaler()
         clinical_data = scaler.fit_transform(clinical_data)
-        pca_clinical_data = PCA(n_components=PCA_num_clinical)  # D维数据保留93
+        pca_clinical_data = PCA(n_components=PCA_num_clinical)  
         clinical_data = pca_clinical_data.fit_transform(clinical_data)
         clinical_data = pd.DataFrame(clinical_data)
-        # 创建 DataFrame，并插入 ID 列和 `combined` 列
+     
         clinical_data.insert(0, 'ID', read_clinical_data['ID'])
         # train_data_original = clinical_data
-        # 按 'ID' 进行分组，并对每一列分别求均值
+       
         train_data_111 = train_data_original.groupby('ID').mean().reset_index()
         clinical_data_111 = clinical_data.groupby('ID').mean().reset_index()
-        # 基于 ID 列合并两个 DataFrame
+    
         merged_df = pd.merge(train_data_111, clinical_data_111, on='ID', how='outer')
         merged_df.columns = merged_df.columns.astype(str)
         merged_df_label = merged_df['ID'].map(label_mapping)
 
         X_train, X_test, y_train, y_test = train_test_split(merged_df.iloc[:, 1:], merged_df_label, test_size=0.2,
                                                            random_state=42, shuffle=True)  # 7 :2
-        # 使用SMOTE进行过采样
-        smote = SMOTE(sampling_strategy=1)  # 调整到1:1比例
+   
+        smote = SMOTE(sampling_strategy=1)  
         X_res, y_res = smote.fit_resample(X_train, y_train)
         X_res = scaler.fit_transform(X_res)
 
 
-        pca_train_data = PCA(n_components=PCA_num)  # D维数据保留
+        pca_train_data = PCA(n_components=PCA_num)  
         X_train = pca_train_data.fit_transform(X_res)
         X_test = scaler.fit_transform(X_test)
 
-        pca_test_data = PCA(n_components=100)  # D维数据保留
+        pca_test_data = PCA(n_components=100) 
         X_test = pca_test_data.fit_transform(X_test)
         y_train = y_res
         y_test = y_test
-        # # 合并为新的DataFrame
+        
         # train_data_resampled = pd.concat([pd.DataFrame(X_res), pd.DataFrame(y_res, columns=['label'])], axis=1)
         # X_train, X_test, y_train, y_test = train_test_split(train_data, y_res, test_size=0.2,
         #                                                    random_state=42, shuffle=True)  # 7 :2
         ID_num = torch.arange(1, X_train.shape[0] + 1).unsqueeze(1)
-        # 对标签进行独热编码
+        
         y_train = to_categorical(y_train, num_classes=2)
         y_test = to_categorical(y_test, num_classes=2)
         # 转换为 PyTorch Tensor
@@ -254,7 +254,7 @@ def data_prepare(train_data_value_A,train_data_original,read_clinical_data,batch
         y_train_tensor = torch.LongTensor(y_train)
         X_test_tensor = torch.FloatTensor(X_test)
         y_test_tensor = torch.LongTensor(y_test)
-        # 训练模型
+       
         train_dataset = TensorDataset(X_train_tensor, y_train_tensor, ID_num)
         test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
         train_loader = DataLoader(train_dataset, batch_size=batch_Size[0], shuffle=True)
@@ -263,10 +263,10 @@ def data_prepare(train_data_value_A,train_data_original,read_clinical_data,batch
 'train: val: internal test = 7 : 1 : 2'
 train_data_namelist = pd.read_excel(r'.\dataset\classification_2-radiomics_0827.xlsx', header=0, usecols="A:B",
                                    sheet_name="train_label")  # usecols="B:AGF"
-# 读取影像组学数据
+
 train_data_original = pd.read_excel(r'.\dataset\classification_2-radiomics_0827.xlsx', header=0,
                                     sheet_name="train_data")  # usecols="B:AGF"
-# 读取文本临床数据
+
 read_clinical_data = pd.read_excel(r'.\dataset\classification_2-radiomics_0827.xlsx', header=0,
                    sheet_name="Clinical information_train")  # usecols="B:AGF"
 import xgboost as xgb
@@ -294,35 +294,35 @@ for seed in np.arange(2, 3, 1):
         input_size = (int(PCA_num/4)+1) * 4
     else:
         input_size = PCA_num
-    # 模型初始化
-    # input_size = PCA_num  # 输入特征的维度
+    # model_init
+    # input_size = PCA_num  
 
-    output_size = 2  # 2分类问题
+    output_size = 2  
     batch_Size = [104,  200]  # 3 130    2 150
     model = RCMFA(input_size, hidden_size, output_size, l1_lambda=l1_lambda)
-    # 为CPU中设置种子，生成随机数
+    # 
     # seed = b
-    # 示例数据（替换为你的实际数据）114
+
     for fold in range(0, 5):# 5
-        # c = [num for num in a if num != (b)]  # 其余的数作为c
+        # c = [num for num in a if num != (b)]  
         print(f"{fold+1}_fold")
         train_loader, test_loader, X_test_tensor = data_prepare(train_data_namelist, train_data_original, read_clinical_data, batch_Size)
         model.__init__(input_size, hidden_size, output_size, l1_lambda)
         model.to(device)
-        # 损失函数和优化器
+        # lossfunction
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=0.0001)#lr=0.0006)
         data = []
         for epoch in range(num_epochs):
             model.train()
-            total_loss = 0.0  # 用于累积每个epoch的损失
+            total_loss = 0.0  
             for batch_X, batch_y, ID_num in train_loader:
                 optimizer.zero_grad()
                 # optimizer1.zero_grad()
                 output = model(batch_X.to(device))
                 output = output.to('cpu')
-                ffnn_loss = criterion(output, batch_y.float())  # 这里不需要再应用 softmax，CrossEntropyLoss 会处理
-                # 添加 L1 正则化损失
+                ffnn_loss = criterion(output, batch_y.float()) 
+               
                 # l1_loss = model.l1_regularization()
                 # loss = ffnn_loss+l1_loss
                 loss = ffnn_loss
@@ -331,15 +331,15 @@ for seed in np.arange(2, 3, 1):
                 # optimizer1.step()
                 total_loss += loss.item()
                 average_loss = total_loss / len(train_loader)
-                # 打印每个epoch的平均损失
+                
                 if epoch % 1 == 0:
                     print(f'Epoch [{epoch + 1}/{num_epochs}], Average Loss: {average_loss:.4f}')
                     batch_y = np.argmax(batch_y, axis=1)
-                    # 计算准确率、召回率、F1分数和精确率
+                   
                     evaluate_value = evaluate(batch_y, output.data, 4, cutoff='auto')
                     # auc_score = roc_auc_score(batch_y, y_pred, multi_class='ovr')
                     print(f'Training Accuracy: {evaluate_value["acc"] * 100:.2f}%,Training AUC: {evaluate_value["auc"] :.4f}')
-        # 在验证集上评估模型
+        
         model.eval()
 
         with torch.no_grad():
@@ -351,13 +351,13 @@ for seed in np.arange(2, 3, 1):
                 output = output.cpu()
 
                 batch_y = np.argmax(batch_y, axis=1)
-                # 计算准确率、召回率、F1分数和精确率
+               
                 evaluate_val = evaluate(batch_y, output.data, 4, cutoff='auto')
                 accuracy = evaluate_val['acc']
                 recall = evaluate_val['recall']
                 precision = evaluate_val['specificity']
                 f1 = evaluate_val['F1']
-                # 计算ROC曲线下的面积（AUC）
+               
                 # y_pred = np.argmax(output.data, axis=1)
                 auc_score = evaluate_val['auc']
                 print("train_data shape:", PCA_num)
@@ -374,7 +374,7 @@ for seed in np.arange(2, 3, 1):
                 F1_scores.append(f1)
                 aucs.append(auc_score)
 
-        # 模型保存
+        #save_model
         metric = auc_score
         if metric > best_metric:
             best_metric = metric
