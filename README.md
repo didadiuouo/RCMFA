@@ -12,12 +12,12 @@ Recommended:
 ## Training
 
 To train the RCMFA model:
-  python RCMFA.py --mode train
+  python RCMFA_train.py 
 
 ## Testing & Evaluation
 
 Evaluate a trained model:
-  python RCMFA.py --mode test --checkpoint ./checkpoints/checkpoint/model_best.pth
+  python RCMFA_test.py --checkpoint ./checkpoints/checkpoint/model_best.pth
 
 ## ROC AUC Statistical Comparison (DeLong Test)
 
